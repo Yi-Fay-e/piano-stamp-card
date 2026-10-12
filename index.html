@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1f2554">
+<title>練琴集點卡</title>
+<style>
+:root{
+  --ink:#1f2554;
+  --ink-2:#3a427f;
+  --paper:#eceff8;
+  --key:#fffefb;
+  --edge:#cfd4e6;
+  --seal:#c8372d;
+  --gold:#e0a62e;
+  --gold-soft:#fbefcf;
+  --mute:#6b7194;
+}
+*{box-sizing:border-box;margin:0}
+html{-webkit-text-size-adjust:100%}
+body{
+  font-family:"PingFang TC","Noto Sans TC","Microsoft JhengHei","Heiti TC",system-ui,sans-serif;
+  background:var(--paper);color:var(--ink);line-height:1.5;min-height:100vh;
+}
+body.lock{overflow:hidden}
+button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+button:disabled{cursor:default}
+:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.page{max-width:520px;margin:0 auto;padding:0 16px 110px}
+.loading{padding:80px 0;text-align:center;color:var(--mute)}
+
+/* ---------- hero ---------- */
+.hero{
+  margin:0 -16px 18px;padding:26px 22px 24px;
+  background:linear-gradient(#f4cb5f,#e6ae35);color:var(--ink);
+  border-radius:0 0 28px 28px;
+}
+.hero-name{font-size:14px;color:rgba(31,37,84,.75);letter-spacing:.04em}
+.hero-bal{display:flex;align-items:baseline;gap:8px;margin:2px 0 14px}
+.hero-bal .num{font-size:76px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums}
+.hero-bal .unit{font-size:20px;font-weight:700;color:rgba(31,37,84,.75)}
+.meter{position:relative;height:16px;border-radius:5px;background:#fffefb;overflow:hidden;--tick:5%}
+.meter i{position:absolute;inset:0 auto 0 0;width:var(--p);background:var(--ink);transition:width .5s}
+.meter::after{
+  content:"";position:absolute;inset:0;
+  background-image:repeating-linear-gradient(90deg,transparent 0,transparent calc(var(--tick) - 1.5px),rgba(130,130,160,.55) calc(var(--tick) - 1.5px),rgba(130,130,160,.55) var(--tick));
+}
+.meter.noticks::after{display:none}
+.hero-msg{margin-top:10px;font-size:15px;color:var(--ink)}
+.hero .btn{margin-top:14px}
+
+/* ---------- week nav ---------- */
+.weeknav{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.weeknav .icon{width:44px;height:44px;border-radius:50%;background:#fff;font-size:24px;line-height:1;box-shadow:0 1px 0 var(--edge)}
+.weeknav .icon:disabled{opacity:.35}
+.weektitle{text-align:center;display:flex;flex-direction:column;line-height:1.3}
+.weektitle strong{font-size:18px}
+.weektitle span{font-size:13px;color:var(--mute)}
+
+/* ---------- piano week ---------- */
+.piano{background:#141418;padding:10px 6px 10px;border-radius:14px}
+.keys{position:relative;display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+.key{
+  position:relative;height:196px;border-radius:0 0 9px 9px;
+  background:linear-gradient(#ffffff 60%,#f3f3f3);
+  display:flex;flex-direction:column;justify-content:flex-end;align-items:center;padding:0 0 10px;
+  box-shadow:0 5px 0 #b5b5ba,0 6px 6px rgba(0,0,0,.3);
+  transition:transform .08s,box-shadow .08s;
+}
+.key.down{transform:translateY(4px);box-shadow:0 1px 0 #b5b5ba;background:linear-gradient(#ececec,#e2e2e2)}
+.key:active:not(:disabled){transform:translateY(4px);box-shadow:0 1px 0 #b5b5ba}
+.key:disabled{opacity:.42}
+.bk{
+  position:absolute;top:0;width:8.4%;height:104px;transform:translateX(-50%);
+  background:linear-gradient(#2e2e34,#050506);border-radius:0 0 5px 5px;
+  box-shadow:0 4px 6px rgba(0,0,0,.4);pointer-events:none;z-index:2;
+}
+.slots{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;min-height:62px;margin-bottom:8px}
+.seal{
+  --r:-8deg;
+  width:34px;height:34px;border-radius:50%;border:3px double var(--seal);color:var(--seal);
+  display:grid;place-items:center;font-weight:800;font-size:16px;background:rgba(200,55,45,.07);
+  transform:rotate(var(--r));margin-top:-10px;
+}
+.seal:first-child{margin-top:0}
+.seal:nth-child(2){--r:7deg}
+.seal.fresh{animation:slam .38s cubic-bezier(.2,.8,.3,1) both;animation-delay:calc(var(--j) * .12s)}
+@keyframes slam{
+  0%{transform:scale(2.4) rotate(-20deg);opacity:0}
+  55%{transform:scale(.9) rotate(var(--r));opacity:1}
+  78%{transform:scale(1.08) rotate(var(--r))}
+  100%{transform:scale(1) rotate(var(--r))}
+}
+.ghost{width:30px;height:30px;border-radius:50%;border:2px dashed #c3c8e0;margin-top:-6px}
+.ghost:first-child{margin-top:0}
+.dbl .ghost{border-color:#e4bd62}
+.kd{display:flex;flex-direction:column;align-items:center;gap:1px;line-height:1.15}
+.kd b{font-size:14px;padding:2px 8px;border-radius:99px}
+.kd em{font-style:normal;font-size:12px;color:var(--mute)}
+.key.today .kd b{background:var(--ink);color:#fff}
+.hint{margin:12px 2px 0;font-size:13px;color:var(--mute)}
+.hint .gd{display:inline-block;width:12px;height:12px;border-radius:50%;border:2px dashed var(--gold);margin-right:4px;vertical-align:-2px}
+
+/* ---------- cards ---------- */
+.card{background:#fff;border-radius:16px;padding:16px;margin-top:16px;box-shadow:0 1px 0 var(--edge)}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;text-align:center}
+.stat b{display:block;font-size:24px;font-variant-numeric:tabular-nums;line-height:1.2}
+.stat span{font-size:13px;color:var(--mute)}
+.stat.neg b{color:var(--seal)}
+.net{display:flex;align-items:baseline;justify-content:space-between;margin-top:14px;padding-top:12px;border-top:1.5px dashed var(--edge)}
+.net span{font-weight:700}
+.net b{font-size:30px;font-variant-numeric:tabular-nums}
+.status{margin-top:10px;font-size:14px;color:var(--ink-2)}
+
+/* ---------- buttons ---------- */
+.btn{padding:11px 18px;border-radius:12px;font-weight:700;font-size:16px;text-align:center}
+.btn.primary{background:var(--ink);color:#fff}
+.btn.gold{background:var(--gold);color:var(--ink)}
+.btn.ghostb{border:1.5px solid var(--edge);background:#fff}
+.btn.off{background:#e6e8f2;color:var(--mute)}
+.btn.dangerfill{background:var(--seal);color:#fff}
+.btn.dangerline{border:1.5px solid var(--seal);color:var(--seal);background:#fff}
+.btn.wide{display:block;width:100%}
+.linkbtn{color:var(--ink-2);text-decoration:underline;font-size:14px;padding:6px}
+
+/* ---------- page heads ---------- */
+.phead{padding:24px 2px 14px;display:flex;align-items:flex-end;justify-content:space-between;gap:12px}
+.phead h1{font-size:26px;line-height:1.2}
+.phead p{font-size:14px;color:var(--mute)}
+.phead .btn{padding:9px 14px;font-size:15px;white-space:nowrap}
+
+/* ---------- prizes ---------- */
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.prize{background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 1px 0 var(--edge);display:flex;flex-direction:column}
+.prize.can{outline:2px solid var(--gold)}
+.pimg{position:relative;aspect-ratio:1;background:var(--gold-soft);display:grid;place-items:center}
+.pimg img{width:100%;height:100%;object-fit:cover;display:block}
+.emo{font-size:54px}
+.ppts{position:absolute;left:8px;bottom:8px;background:var(--ink);color:#fff;font-weight:800;padding:2px 10px;border-radius:99px;font-size:14px}
+.edit{position:absolute;right:8px;top:8px;width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.93);font-size:16px;display:grid;place-items:center}
+.prize h3{font-size:15px;padding:10px 12px 8px;flex:1;overflow-wrap:anywhere}
+.prize .btn{margin:0 10px 10px;padding:9px 10px;font-size:15px}
+.empty{background:#fff;border-radius:16px;padding:28px 18px;text-align:center;color:var(--mute);font-size:15px}
+
+/* ---------- history ---------- */
+.search{width:100%;padding:12px 14px;border:1.5px solid var(--edge);border-radius:12px;font:inherit;background:#fff;margin-bottom:12px}
+.sumline{font-size:14px;color:var(--mute);margin:0 2px 10px}
+.hrow{display:grid;grid-template-columns:52px 1fr auto;gap:12px;align-items:center;background:#fff;padding:10px 12px;border-radius:14px;margin-bottom:8px}
+.hthumb{width:52px;height:52px;border-radius:10px;overflow:hidden;background:var(--gold-soft);display:grid;place-items:center;font-size:26px}
+.hthumb img{width:100%;height:100%;object-fit:cover;display:block}
+.hmain{min-width:0}
+.hmain b{display:block;overflow-wrap:anywhere;line-height:1.3}
+.hmain small{color:var(--mute);font-size:13px}
+.hside{text-align:right}
+.hside strong{display:block;color:var(--seal);font-size:18px}
+.hside button{font-size:13px;color:var(--mute);text-decoration:underline;padding:2px 0}
+
+/* ---------- settings / forms ---------- */
+.field{display:grid;gap:6px;margin-bottom:14px}
+.field>span{font-weight:700;font-size:14px}
+.field small{color:var(--mute);font-size:13px}
+input[type=text],input[type=number],input[type=date],select,textarea{
+  width:100%;padding:11px 12px;border:1.5px solid var(--edge);border-radius:10px;font:inherit;background:#fff;color:var(--ink)
+}
+textarea{min-height:140px;resize:vertical;font-size:13px}
+.check{display:flex;align-items:flex-start;gap:10px;margin-bottom:14px}
+.check input{width:22px;height:22px;margin-top:2px;accent-color:var(--ink)}
+.check span{font-weight:700;font-size:14px}
+.check small{display:block;color:var(--mute);font-weight:400;font-size:13px}
+.rule{background:var(--gold-soft);border-radius:12px;padding:12px 14px;font-size:14px;margin-bottom:16px}
+.sect{font-size:16px;margin:22px 0 10px}
+.btnrow{display:flex;gap:10px;flex-wrap:wrap}
+.banner{background:#fde7e4;color:#8a2119;border-radius:12px;padding:10px 14px;font-size:14px;margin:14px 0}
+
+/* ---------- nav ---------- */
+.nav{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1.5px solid var(--edge);display:flex;justify-content:center;padding-bottom:env(safe-area-inset-bottom);z-index:5}
+.nav>div{display:flex;width:100%;max-width:520px}
+.nav button{flex:1;padding:8px 0 9px;display:flex;flex-direction:column;align-items:center;gap:0;font-size:12px;color:var(--mute)}
+.nav button span{font-size:22px;line-height:1.2;padding:0 16px;border-radius:99px}
+.nav button[aria-current=page]{color:var(--ink);font-weight:700}
+.nav button[aria-current=page] span{background:var(--gold-soft)}
+
+/* ---------- modal ---------- */
+.scrim{position:fixed;inset:0;background:rgba(20,24,60,.55);display:flex;align-items:flex-end;justify-content:center;z-index:20;overflow:hidden}
+.scrim.center{align-items:center;padding:20px}
+.sheet{background:#fff;width:100%;max-width:520px;max-height:92vh;overflow:auto;border-radius:22px 22px 0 0;padding:22px 20px calc(22px + env(safe-area-inset-bottom));position:relative;z-index:1}
+.scrim.center .sheet{border-radius:22px;max-width:400px;padding-bottom:22px}
+.sheet h2{font-size:21px;margin-bottom:10px;line-height:1.35}
+.sheet .msg{color:var(--ink-2);margin-bottom:18px}
+.rowbtns{display:flex;gap:10px;justify-content:flex-end;margin-top:8px}
+.rowbtns .btn{flex:1}
+.stack{display:grid;gap:10px;margin-top:18px}
+.cong{text-align:center}
+.cong .big{font-size:56px;line-height:1.1;margin-bottom:6px}
+.cong h2{font-size:23px}
+.cong p{color:var(--ink-2)}
+.cong p b{font-size:22px}
+.confetti{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:2}
+.confetti i{position:absolute;top:-16px;width:9px;height:15px;opacity:.92;animation:fall linear forwards}
+@keyframes fall{to{transform:translateY(110vh) rotate(720deg)}}
+.imgpick{display:flex;align-items:center;gap:14px;margin-bottom:16px}
+.imgbox{width:92px;height:92px;border-radius:14px;overflow:hidden;background:var(--gold-soft);display:grid;place-items:center;font-size:42px;flex:none}
+.imgbox img{width:100%;height:100%;object-fit:cover;display:block}
+.imgbtns{display:flex;flex-direction:column;align-items:flex-start;gap:4px}
+.stepper{display:grid;grid-template-columns:48px 1fr 48px;gap:8px}
+.stepper button{border:1.5px solid var(--edge);border-radius:10px;font-size:22px;background:#fff}
+.stepper input{text-align:center;font-size:18px;font-weight:700}
+.toast{position:fixed;left:50%;bottom:86px;transform:translate(-50%,20px);background:var(--ink);color:#fff;padding:10px 18px;border-radius:99px;font-size:14px;opacity:0;pointer-events:none;transition:.25s;z-index:30;max-width:90vw;text-align:center}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+
+@media (prefers-reduced-motion:reduce){
+  *{transition:none!important}
+  .seal.fresh{animation:none}
+  .confetti{display:none}
+}
+</style>
+</head>
+<body>
+<div id="app"><p class="loading">載入中…</p></div>
+<nav class="nav" id="nav" hidden></nav>
+<div id="modalRoot"></div>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+(function(){
+'use strict';
+
+/* ================= 基本設定 ================= */
+var KEY='piano-card-v1';
+var DAYN=['一','二','三','四','五','六','日'];
+var GIFTS=['🎁','🧸','🍰','🎈','🚲','🎮','🍦','📚','🎨','🧩'];
+var MSGS=[
+  '你好棒！可以兌換喜歡的獎品囉！',
+  '太厲害了！努力練琴的成果，換獎品的時間到！',
+  '哇！{name}集滿點數了，快去挑選獎品吧！',
+  '每天都有練習，真的很了不起！獎品在等你喔！',
+  '手指超有力！恭喜達成目標，去看看想要什麼獎品吧！',
+  '音符都在為你鼓掌！可以兌換獎品囉！',
+  '堅持就是力量！恭喜集滿，快去領獎！',
+  '今天的你比昨天更會彈琴了！獎品時間到～',
+  '恭喜達成！你的努力大家都看到了！',
+  '叮叮咚咚～獎品鈴聲響起，可以兌換囉！'
+];
+var TABS=[['home','🎹','練琴'],['prizes','🎁','獎品'],['history','📒','紀錄'],['settings','⚙️','設定']];
+
+var pad=function(n){return String(n).padStart(2,'0');};
+var dkey=function(d){return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());};
+var parseKey=function(k){var p=k.split('-').map(Number);return new Date(p[0],p[1]-1,p[2]);};
+var addDays=function(d,n){return new Date(d.getFullYear(),d.getMonth(),d.getDate()+n);};
+var day0=function(d){return new Date(d.getFullYear(),d.getMonth(),d.getDate());};
+var mondayOf=function(d){return addDays(d,-((d.getDay()+6)%7));};
+var T0=function(){return day0(new Date());};
+var esc=function(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});};
+var uid=function(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6);};
+var randGift=function(){return GIFTS[Math.floor(Math.random()*GIFTS.length)];};
+
+function defaultState(){
+  return {
+    v:1,
+    settings:{name:'小寶貝',goal:20,minStamps:4,doubleFrom:5,floorZero:true,startDate:dkey(new Date())},
+    stamps:{},
+    prizes:[
+      {id:uid(),name:'貼紙一包',points:10,image:'',emoji:'⭐'},
+      {id:uid(),name:'喜歡的小玩具',points:20,image:'',emoji:'🧸'},
+      {id:uid(),name:'一起去吃大餐',points:40,image:'',emoji:'🍰'}
+    ],
+    history:[]
+  };
+}
+function normalize(o){
+  var d=defaultState();
+  var s=Object.assign({},d.settings,o.settings||{});
+  s.goal=Math.max(1,parseInt(s.goal,10)||20);
+  s.minStamps=Math.min(7,Math.max(1,parseInt(s.minStamps,10)||4));
+  s.doubleFrom=Math.min(8,Math.max(1,parseInt(s.doubleFrom,10)||5));
+  s.floorZero=!!s.floorZero;
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(s.startDate)) s.startDate=d.settings.startDate;
+  return {
+    v:1,settings:s,
+    stamps:(o.stamps&&typeof o.stamps==='object')?o.stamps:{},
+    prizes:Array.isArray(o.prizes)?o.prizes:[],
+    history:Array.isArray(o.history)?o.history:[]
+  };
+}
+
+var S=defaultState();
+var ui={tab:'home',weekOff:0,hq:'',fresh:null};
+var loaded=false, storageOK=true, freshT=null, saveT=null, lastMsg=-1;
+var $app=document.getElementById('app'),$nav=document.getElementById('nav'),$modal=document.getElementById('modalRoot'),$toast=document.getElementById('toast');
+
+/* ================= 儲存 ================= */
+function save(){
+  clearTimeout(saveT);
+  saveT=setTimeout(async function(){
+    var json=JSON.stringify(S);
+    if(json.length>4500000) toast('圖片太多，儲存空間快滿了，請刪掉一些圖片');
+    var ok=false;
+    try{
+      if(window.storage){
+        var r=await window.storage.set(KEY,json,false);
+        ok=(r!==null&&r!==false);
+      }
+    }catch(e){console.warn('storage.set failed',e);}
+    if(!ok){
+      try{localStorage.setItem(KEY,json);ok=true;}catch(e){}
+    }
+    if(ok!==storageOK){storageOK=ok;render();}
+  },300);
+}
+function toast(msg){
+  $toast.textContent=msg;$toast.classList.add('show');
+  clearTimeout(toast.t);toast.t=setTimeout(function(){$toast.classList.remove('show');},2400);
+}
+
+/* ================= 計分規則 ================= */
+function weekInfo(mon,T){
+  var st=parseKey(S.settings.startDate), firstMon=mondayOf(st);
+  var days=[],count=0,raw=0,i;
+  for(i=0;i<7;i++){
+    var d=addDays(mon,i),k=dkey(d);
+    var pts=(i+1>=S.settings.doubleFrom)?2:1;
+    var o={i:i,d:d,k:k,stamped:!!S.stamps[k],pts:pts,future:d>T,beforeStart:d<st,isToday:d.getTime()===T.getTime()};
+    days.push(o);
+    if(o.stamped&&!o.beforeStart){count++;raw+=pts;}
+  }
+  var sunday=addDays(mon,6);
+  var complete=T>sunday;
+  var required=S.settings.minStamps;
+  if(mon.getTime()===firstMon.getTime()){
+    var avail=days.filter(function(x){return !x.beforeStart;}).length;
+    required=Math.min(required,avail);
+  }
+  var penalty=complete?Math.max(0,required-count):0;
+  var net=raw-penalty;
+  if(S.settings.floorZero) net=Math.max(0,net);
+  return {mon:mon,sun:sunday,days:days,count:count,raw:raw,required:required,penalty:penalty,net:net,complete:complete};
+}
+function weeklyMax(){var m=0,i;for(i=1;i<=7;i++)m+=(i>=S.settings.doubleFrom)?2:1;return m;}
+function weeksBack(){
+  var diff=mondayOf(T0())-mondayOf(parseKey(S.settings.startDate));
+  return Math.max(0,Math.round(diff/(7*864e5)));
+}
+function totals(){
+  var T=T0(),first=mondayOf(parseKey(S.settings.startDate)),cur=mondayOf(T),earned=0,m;
+  for(m=first;m<=cur;m=addDays(m,7)) earned+=weekInfo(m,T).net;
+  var spent=S.history.reduce(function(a,h){return a+(+h.points||0);},0);
+  return {earned:earned,spent:spent,balance:earned-spent};
+}
+
+/* ================= 畫面 ================= */
+function render(){
+  if(!loaded) return;
+  var views={home:viewHome,prizes:viewPrizes,history:viewHistory,settings:viewSettings};
+  var banner=storageOK?'':'<div class="banner">目前這個環境無法保存資料，關閉頁面後紀錄會消失。請到「設定」用匯出備份保存。</div>';
+  $app.innerHTML='<main class="page">'+(ui.tab==='home'?'':banner)+views[ui.tab]()+'</main>';
+  $nav.hidden=false;
+  $nav.innerHTML='<div>'+TABS.map(function(t){
+    return '<button data-act="tab" data-tab="'+t[0]+'"'+(ui.tab===t[0]?' aria-current="page"':'')+'><span>'+t[1]+'</span>'+t[2]+'</button>';
+  }).join('')+'</div>';
+}
+
+function viewHome(){
+  var T=T0(),back=weeksBack();
+  ui.weekOff=Math.max(-back,Math.min(0,ui.weekOff));
+  var mon=addDays(mondayOf(T),ui.weekOff*7);
+  var W=weekInfo(mon,T);
+  var tot=totals(),bal=tot.balance,goal=S.settings.goal;
+  var pct=Math.max(0,Math.min(100,bal/goal*100));
+  var tick=goal<=40?(100/goal)+'%':'100%';
+  var banner=storageOK?'':'<div class="banner">目前這個環境無法保存資料，關閉頁面後紀錄會消失。請到「設定」用匯出備份保存。</div>';
+
+  var hero='<section class="hero"><p class="hero-name">'+esc(S.settings.name)+'的練琴集點卡</p>'+
+    '<div class="hero-bal"><span class="num">'+bal+'</span><span class="unit">點</span></div>'+
+    '<div class="meter'+(goal>40?' noticks':'')+'" style="--p:'+pct+'%;--tick:'+tick+'" role="progressbar" aria-valuemin="0" aria-valuemax="'+goal+'" aria-valuenow="'+Math.max(0,bal)+'"><i></i></div>'+
+    '<p class="hero-msg">'+(bal>=goal?'已經集滿 '+goal+' 點，可以兌換獎品了！':'再 '+(goal-bal)+' 點就可以兌換獎品')+'</p>'+
+    (bal>=goal?'<button class="btn primary" data-act="goPrizes">去挑選獎品</button>':'')+'</section>';
+
+  var title=ui.weekOff===0?'本週':(ui.weekOff===-1?'上週':(-ui.weekOff)+' 週前');
+  var nav='<div class="weeknav"><button class="icon" data-act="wk" data-d="-1" aria-label="上一週"'+(ui.weekOff<=-back?' disabled':'')+'>‹</button>'+
+    '<div class="weektitle"><strong>'+title+'</strong><span>'+(mon.getMonth()+1)+'/'+mon.getDate()+' – '+(W.sun.getMonth()+1)+'/'+W.sun.getDate()+'</span></div>'+
+    '<button class="icon" data-act="wk" data-d="1" aria-label="下一週"'+(ui.weekOff>=0?' disabled':'')+'>›</button></div>';
+
+  var blackAt=[0,1,3,4,5];
+  var bks=blackAt.map(function(i){return '<span class="bk" style="left:'+((i+1)/7*100)+'%"></span>';}).join('');
+  var keys=W.days.map(function(x){
+    var inner='',j;
+    if(x.stamped){
+      for(j=0;j<x.pts;j++) inner+='<span class="seal'+(ui.fresh===x.k?' fresh':'')+'" style="--j:'+j+'">琴</span>';
+    }else{
+      for(j=0;j<x.pts;j++) inner+='<span class="ghost"></span>';
+    }
+    var label=(x.d.getMonth()+1)+'月'+x.d.getDate()+'日 週'+DAYN[x.i]+(x.pts===2?'，蓋2章':'')+(x.stamped?'，已蓋章':'，尚未蓋章');
+    return '<button class="key'+(x.stamped?' down':'')+(x.pts===2?' dbl':'')+(x.isToday?' today':'')+'" data-act="stamp" data-k="'+x.k+'" aria-pressed="'+x.stamped+'" aria-label="'+label+'"'+((x.future||x.beforeStart)?' disabled':'')+'>'+
+      '<span class="slots">'+inner+'</span><span class="kd"><b>'+DAYN[x.i]+'</b><em>'+x.d.getDate()+'</em></span></button>';
+  }).join('');
+
+  var hint='<p class="hint">點琴鍵蓋章，再點一次可以取消。'+(S.settings.doubleFrom<=7?'<span class="gd" style="margin-left:6px"></span>兩個金色虛線圈的日子，一天蓋 2 章。':'')+'</p>';
+
+  var status;
+  if(W.complete){
+    status=W.penalty>0?'這週只蓋了 '+W.count+' 次，少 '+W.penalty+' 次，所以多扣 '+W.penalty+' 點。':'這週達標，做得很好！';
+  }else if(W.count>=W.required){
+    status='本週已達標！繼續保持。';
+  }else{
+    status='再蓋 '+(W.required-W.count)+' 次就達標。週日結算時沒達標，每少 1 次多扣 1 點。';
+  }
+  if(W.required<S.settings.minStamps) status+=' （開始使用的第一週，目標調整為 '+W.required+' 次）';
+
+  var stats='<div class="stats"><div class="stat"><b>'+W.count+' / '+W.required+'</b><span>蓋章次數</span></div>'+
+    '<div class="stat"><b>+'+W.raw+'</b><span>蓋章得點</span></div>'+
+    '<div class="stat'+(W.penalty>0?' neg':'')+'"><b>'+(W.complete?(W.penalty>0?'−'+W.penalty:'0'):'—')+'</b><span>扣點</span></div></div>'+
+    '<div class="net"><span>'+(W.complete?'本週淨得':'目前得點')+'</span><b>'+W.net+' 點</b></div>'+
+    '<p class="status">'+esc(status)+'</p>';
+
+  return banner+hero+nav+'<div class="piano"><div class="keys">'+bks+keys+'</div></div>'+hint+'<section class="card">'+stats+'</section>';
+}
+
+function giftHTML(p){
+  return p.image?'<img src="'+esc(p.image)+'" alt="">':'<span class="emo">'+esc(p.emoji||'🎁')+'</span>';
+}
+function viewPrizes(){
+  var bal=totals().balance;
+  var list=S.prizes.slice().sort(function(a,b){return a.points-b.points||String(a.name).localeCompare(String(b.name),'zh-Hant');});
+  var head='<header class="phead"><div><h1>獎品</h1><p>目前有 '+bal+' 點</p></div><button class="btn primary" data-act="prizeNew">＋ 新增獎品</button></header>';
+  if(!list.length) return head+'<div class="empty">還沒有獎品。點右上角「新增獎品」，放進孩子想要的禮物。</div>';
+  return head+'<div class="grid">'+list.map(function(p){
+    var can=bal>=p.points;
+    return '<article class="prize'+(can?' can':'')+'"><div class="pimg">'+giftHTML(p)+'<span class="ppts">'+p.points+' 點</span>'+
+      '<button class="edit" data-act="prizeEdit" data-id="'+p.id+'" aria-label="修改'+esc(p.name)+'">✎</button></div>'+
+      '<h3>'+esc(p.name)+'</h3>'+
+      '<button class="btn wide '+(can?'primary':'off')+'" data-act="redeem" data-id="'+p.id+'"'+(can?'':' disabled')+'>'+(can?'兌換':'還差 '+(p.points-bal)+' 點')+'</button></article>';
+  }).join('')+'</div>';
+}
+
+function fmtTs(ts){
+  var d=new Date(ts);
+  return d.getFullYear()+'/'+pad(d.getMonth()+1)+'/'+pad(d.getDate())+' 週'+DAYN[(d.getDay()+6)%7]+' '+pad(d.getHours())+':'+pad(d.getMinutes());
+}
+function histListHTML(){
+  var q=ui.hq.trim().toLowerCase();
+  var items=S.history.slice().sort(function(a,b){return b.ts-a.ts;});
+  if(q) items=items.filter(function(h){return (String(h.name)+' '+fmtTs(h.ts)).toLowerCase().indexOf(q)>-1;});
+  if(!items.length) return '<div class="empty">'+(S.history.length?'找不到符合的紀錄。':'還沒有兌換紀錄。到「獎品」頁兌換第一個獎品吧！')+'</div>';
+  return items.map(function(h){
+    return '<div class="hrow"><div class="hthumb">'+(h.image?'<img src="'+esc(h.image)+'" alt="">':esc(h.emoji||'🎁'))+'</div>'+
+      '<div class="hmain"><b>'+esc(h.name)+'</b><small>'+fmtTs(h.ts)+'</small></div>'+
+      '<div class="hside"><strong>−'+h.points+' 點</strong><button data-act="histUndo" data-id="'+h.id+'">撤銷</button></div></div>';
+  }).join('');
+}
+function viewHistory(){
+  var n=S.history.length,sum=S.history.reduce(function(a,h){return a+(+h.points||0);},0);
+  return '<header class="phead"><div><h1>兌換紀錄</h1></div></header>'+
+    '<p class="sumline">共兌換 '+n+' 次，用掉 '+sum+' 點</p>'+
+    '<input class="search" id="hq" type="search" placeholder="搜尋獎品或日期，例如 2026/10" value="'+esc(ui.hq)+'" autocomplete="off">'+
+    '<div id="histList">'+histListHTML()+'</div>';
+}
+
+function viewSettings(){
+  var s=S.settings,i;
+  var minOpts='',dblOpts='';
+  for(i=1;i<=7;i++){
+    minOpts+='<option value="'+i+'"'+(i===s.minStamps?' selected':'')+'>'+i+' 次</option>';
+    dblOpts+='<option value="'+i+'"'+(i===s.doubleFrom?' selected':'')+'>第 '+i+' 天（週'+DAYN[i-1]+'）起</option>';
+  }
+  dblOpts+='<option value="8"'+(s.doubleFrom>7?' selected':'')+'>不啟用雙倍</option>';
+  var dbl=s.doubleFrom>7?'':(s.doubleFrom===7?'週日':'週'+DAYN[s.doubleFrom-1]+'到週日')+'每天蓋 2 章，';
+  var rule='每天練琴蓋 1 章；'+dbl+'每週最高 '+weeklyMax()+' 點。每週至少 '+s.minStamps+' 次，少 1 次就多扣 1 點。';
+  return '<header class="phead"><div><h1>設定</h1></div></header>'+
+    '<div class="rule">'+esc(rule)+'</div>'+
+    '<label class="field"><span>孩子的名字</span><input type="text" data-set="name" value="'+esc(s.name)+'" maxlength="12"></label>'+
+    '<label class="field"><span>兌換目標點數</span><input type="number" inputmode="numeric" min="1" max="999" data-set="goal" value="'+s.goal+'"><small>累積到這個點數會跳出恭喜視窗。</small></label>'+
+    '<label class="field"><span>每週至少蓋章次數</span><select data-set="minStamps">'+minOpts+'</select></label>'+
+    '<label class="field"><span>從每週第幾天開始，一天蓋 2 章</span><select data-set="doubleFrom">'+dblOpts+'</select><small>每週從週一開始，到週日結束。</small></label>'+
+    '<label class="field"><span>開始日期</span><input type="date" data-set="startDate" value="'+esc(s.startDate)+'" max="'+dkey(new Date())+'"><small>這天之前的週次不會計入，也不會被扣點。</small></label>'+
+    '<label class="check"><input type="checkbox" data-set="floorZero"'+(s.floorZero?' checked':'')+'><span>單週得點最低為 0<small>關閉後，沒練琴的週次可能出現負分。</small></span></label>'+
+    '<p class="status" style="margin-bottom:6px">更改規則會重新計算所有週次。</p>'+
+    '<h2 class="sect">備份與重設</h2>'+
+    '<div class="btnrow"><button class="btn ghostb" data-act="exportData">匯出備份</button><button class="btn ghostb" data-act="importData">匯入備份</button><button class="btn dangerline" data-act="resetAll">清除全部資料</button></div>';
+}
+
+/* ================= 彈窗 ================= */
+function openModal(html,o){
+  o=o||{};
+  $modal.innerHTML='<div class="scrim'+(o.center?' center':'')+'"'+(o.sticky?'':' data-act="scrim"')+'>'+(o.extra||'')+'<div class="sheet" role="dialog" aria-modal="true">'+html+'</div></div>';
+  document.body.classList.add('lock');
+}
+function closeModal(){$modal.innerHTML='';document.body.classList.remove('lock');}
+
+var cfg=null;
+function askConfirm(o){
+  cfg=o;
+  openModal('<h2>'+esc(o.title)+'</h2><p class="msg">'+esc(o.msg||'')+'</p>'+
+    '<div class="rowbtns"><button class="btn ghostb" data-act="cfNo">取消</button><button class="btn '+(o.danger?'dangerfill':'primary')+'" data-act="cfYes">'+esc(o.yes||'確定')+'</button></div>',{center:true,sticky:true});
+}
+function confetti(){
+  var cols=['#e0a62e','#c8372d','#3a427f','#2f8f6b','#f08fb0'],h='',i;
+  for(i=0;i<40;i++){
+    h+='<i style="left:'+(Math.random()*100)+'%;background:'+cols[i%cols.length]+';animation-duration:'+(2.2+Math.random()*2)+'s;animation-delay:'+(Math.random()*.8)+'s;transform:rotate('+(Math.random()*360)+'deg)"></i>';
+  }
+  return '<div class="confetti">'+h+'</div>';
+}
+function showCongrats(){
+  var i;
+  do{i=Math.floor(Math.random()*MSGS.length);}while(i===lastMsg&&MSGS.length>1);
+  lastMsg=i;
+  var bal=totals().balance;
+  openModal('<div class="cong"><div class="big">🎉</div><h2>'+esc(MSGS[i].replace('{name}',S.settings.name))+'</h2><p>現在有 <b>'+bal+'</b> 點</p>'+
+    '<div class="stack"><button class="btn gold" data-act="goPrizes">去挑選獎品</button><button class="btn ghostb" data-act="closeModal">繼續練琴</button></div></div>',
+    {center:true,extra:confetti()});
+}
+
+/* ---- 獎品表單 ---- */
+var draft=null;
+function syncDraft(){
+  var n=document.getElementById('pfName'),p=document.getElementById('pfPts');
+  if(n) draft.name=n.value;
+  if(p) draft.points=p.value;
+}
+function drawPrizeForm(){
+  var d=draft,edit=!!d.id;
+  openModal('<h2>'+(edit?'修改獎品':'新增獎品')+'</h2>'+
+    '<div class="imgpick"><div class="imgbox">'+giftHTML(d)+'</div><div class="imgbtns">'+
+    '<button class="btn ghostb" data-act="pickImage">'+(d.image?'更換圖片':'選擇圖片')+'</button>'+
+    (d.image?'<button class="linkbtn" data-act="removeImage">移除圖片</button>':'')+
+    '<input type="file" id="pfFile" accept="image/*" hidden></div></div>'+
+    '<label class="field"><span>獎品名稱</span><input type="text" id="pfName" maxlength="30" value="'+esc(d.name)+'" placeholder="例如：樂高積木"></label>'+
+    '<div class="field"><span>需要點數</span><div class="stepper"><button data-act="pstep" data-d="-1" aria-label="減少">−</button>'+
+    '<input type="number" id="pfPts" inputmode="numeric" min="1" max="999" value="'+esc(d.points)+'" aria-label="需要點數"><button data-act="pstep" data-d="1" aria-label="增加">＋</button></div></div>'+
+    '<div class="rowbtns">'+(edit?'<button class="btn dangerline" data-act="prizeDelete">刪除</button>':'')+
+    '<button class="btn ghostb" data-act="closeModal">取消</button><button class="btn primary" data-act="prizeSave">儲存</button></div>',
+    {sticky:true});
+}
+function fileToThumb(file,size){
+  size=size||360;
+  return new Promise(function(res,rej){
+    var fr=new FileReader();
+    fr.onload=function(){
+      var img=new Image();
+      img.onload=function(){
+        var c=document.createElement('canvas');c.width=c.height=size;
+        var x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,size,size);
+        var s=Math.min(img.width,img.height);
+        x.drawImage(img,(img.width-s)/2,(img.height-s)/2,s,s,0,0,size,size);
+        res(c.toDataURL('image/jpeg',0.8));
+      };
+      img.onerror=rej;img.src=fr.result;
+    };
+    fr.onerror=rej;fr.readAsDataURL(file);
+  });
+}
+function savePrize(){
+  syncDraft();
+  var name=String(draft.name).trim(),pts=parseInt(draft.points,10);
+  if(!name){toast('請輸入獎品名稱');return;}
+  if(!(pts>=1)){toast('點數要大於 0');return;}
+  if(draft.id){
+    var p=S.prizes.find(function(x){return x.id===draft.id;});
+    if(p) Object.assign(p,{name:name,points:pts,image:draft.image,emoji:draft.emoji});
+  }else{
+    S.prizes.push({id:uid(),name:name,points:pts,image:draft.image,emoji:draft.emoji});
+  }
+  save();closeModal();render();toast('已儲存');
+}
+
+/* ---- 兌換 ---- */
+function redeem(id){
+  var p=S.prizes.find(function(x){return x.id===id;});
+  if(!p) return;
+  var bal=totals().balance;
+  if(bal<p.points){toast('點數還不夠喔');return;}
+  askConfirm({title:'兌換「'+p.name+'」？',msg:'會使用 '+p.points+' 點，兌換後剩下 '+(bal-p.points)+' 點。',yes:'確定兌換',onYes:function(){
+    S.history.push({id:uid(),ts:Date.now(),name:p.name,points:p.points,image:p.image||'',emoji:p.emoji||'🎁'});
+    save();render();
+    openModal('<div class="cong"><div class="big">🎁</div><h2>兌換成功！</h2><p>「'+esc(p.name)+'」已記錄在兌換紀錄，記得向爸媽領獎品喔。</p>'+
+      '<div class="stack"><button class="btn primary" data-act="closeModal">好的</button></div></div>',{center:true,extra:confetti()});
+  }});
+}
+
+/* ---- 蓋章 ---- */
+function toggleStamp(k){
+  var T=T0(),d=parseKey(k);
+  if(d>T||d<parseKey(S.settings.startDate)) return;
+  var before=totals().balance,adding=!S.stamps[k];
+  if(adding) S.stamps[k]=true; else delete S.stamps[k];
+  var after=totals().balance;
+  ui.fresh=adding?k:null;
+  save();render();
+  if(adding&&navigator.vibrate) navigator.vibrate(12);
+  clearTimeout(freshT);freshT=setTimeout(function(){ui.fresh=null;},700);
+  var g=S.settings.goal;
+  if(adding&&before<g&&after>=g) setTimeout(showCongrats,450);
+}
+
+/* ================= 事件 ================= */
+var A={
+  tab:function(el){ui.tab=el.dataset.tab;closeModal();render();window.scrollTo(0,0);},
+  goPrizes:function(){closeModal();ui.tab='prizes';render();window.scrollTo(0,0);},
+  closeModal:closeModal,
+  scrim:function(el,e){if(e.target===el) closeModal();},
+  wk:function(el){
+    var n=ui.weekOff+(+el.dataset.d);
+    if(n<=0&&n>=-weeksBack()){ui.weekOff=n;render();}
+  },
+  stamp:function(el){toggleStamp(el.dataset.k);},
+  prizeNew:function(){draft={id:null,name:'',points:S.settings.goal,image:'',emoji:randGift()};drawPrizeForm();},
+  prizeEdit:function(el){
+    var p=S.prizes.find(function(x){return x.id===el.dataset.id;});
+    if(p){draft=Object.assign({},p);drawPrizeForm();}
+  },
+  prizeSave:savePrize,
+  prizeDelete:function(){
+    syncDraft();
+    var id=draft.id,name=draft.name||'這個獎品';
+    askConfirm({title:'刪除「'+name+'」？',msg:'刪除後無法復原。已兌換的紀錄不受影響。',yes:'刪除',danger:true,
+      onYes:function(){S.prizes=S.prizes.filter(function(x){return x.id!==id;});save();render();toast('已刪除');},
+      onNo:drawPrizeForm});
+  },
+  pstep:function(el){
+    syncDraft();
+    draft.points=Math.max(1,(parseInt(draft.points,10)||0)+(+el.dataset.d));
+    document.getElementById('pfPts').value=draft.points;
+  },
+  pickImage:function(){syncDraft();document.getElementById('pfFile').click();},
+  removeImage:function(){syncDraft();draft.image='';drawPrizeForm();},
+  redeem:function(el){redeem(el.dataset.id);},
+  cfYes:function(){var c=cfg;cfg=null;closeModal();if(c&&c.onYes)c.onYes();},
+  cfNo:function(){var c=cfg;cfg=null;closeModal();if(c&&c.onNo)c.onNo();},
+  histUndo:function(el){
+    var h=S.history.find(function(x){return x.id===el.dataset.id;});
+    if(!h) return;
+    askConfirm({title:'撤銷這筆兌換？',msg:'「'+h.name+'」的 '+h.points+' 點會退回給孩子，這筆紀錄會被刪除。',yes:'撤銷',danger:true,onYes:function(){
+      S.history=S.history.filter(function(x){return x.id!==h.id;});save();render();toast('已撤銷，點數已退回');
+    }});
+  },
+  exportData:function(){
+    openModal('<h2>匯出備份</h2><p class="msg">複製下面整段文字，貼到備忘錄或傳給自己保存。</p>'+
+      '<textarea id="expText" readonly></textarea>'+
+      '<div class="rowbtns" style="margin-top:12px"><button class="btn ghostb" data-act="closeModal">關閉</button><button class="btn primary" data-act="copyExport">複製</button></div>',{sticky:true});
+    document.getElementById('expText').value=JSON.stringify(S);
+  },
+  copyExport:function(){
+    var t=document.getElementById('expText');t.focus();t.select();
+    var ok=false;
+    try{ok=document.execCommand('copy');}catch(e){}
+    if(!ok&&navigator.clipboard){navigator.clipboard.writeText(t.value).then(function(){toast('已複製');},function(){toast('請手動長按全選後複製');});return;}
+    toast(ok?'已複製':'請手動長按全選後複製');
+  },
+  importData:function(){
+    openModal('<h2>匯入備份</h2><p class="msg">貼上先前匯出的文字。匯入後會取代目前的所有資料。</p>'+
+      '<textarea id="impText" placeholder="在這裡貼上備份內容"></textarea>'+
+      '<div class="rowbtns" style="margin-top:12px"><button class="btn ghostb" data-act="closeModal">取消</button><button class="btn primary" data-act="doImport">匯入</button></div>',{sticky:true});
+  },
+  doImport:function(){
+    var t=document.getElementById('impText').value.trim(),o;
+    try{o=JSON.parse(t);if(!o||typeof o!=='object'||!o.settings) throw new Error('bad');}
+    catch(e){toast('備份內容格式不正確');return;}
+    askConfirm({title:'匯入並覆蓋？',msg:'目前的資料會被備份內容取代。',yes:'匯入',danger:true,onYes:function(){
+      S=normalize(o);ui={tab:'settings',weekOff:0,hq:'',fresh:null};save();render();toast('已匯入');
+    }});
+  },
+  resetAll:function(){
+    askConfirm({title:'清除全部資料？',msg:'所有蓋章、獎品與兌換紀錄都會被刪除，無法復原。建議先匯出備份。',yes:'全部清除',danger:true,onYes:function(){
+      S=defaultState();ui={tab:'home',weekOff:0,hq:'',fresh:null};save();render();toast('已重設');window.scrollTo(0,0);
+    }});
+  }
+};
+
+document.addEventListener('click',function(e){
+  var el=e.target.closest('[data-act]');
+  if(!el||el.disabled) return;
+  var f=A[el.dataset.act];
+  if(f) f(el,e);
+});
+document.addEventListener('input',function(e){
+  if(e.target.id==='hq'){
+    ui.hq=e.target.value;
+    document.getElementById('histList').innerHTML=histListHTML();
+  }
+});
+document.addEventListener('change',function(e){
+  var el=e.target;
+  if(el.id==='pfFile'){
+    var f=el.files&&el.files[0];
+    if(!f) return;
+    syncDraft();
+    fileToThumb(f).then(function(url){draft.image=url;drawPrizeForm();},function(){toast('圖片讀取失敗，請換一張試試');});
+    return;
+  }
+  var k=el.dataset&&el.dataset.set;
+  if(!k) return;
+  var v=el.type==='checkbox'?el.checked:el.value;
+  if(k==='goal') v=Math.max(1,Math.min(999,parseInt(v,10)||20));
+  else if(k==='minStamps'||k==='doubleFrom') v=parseInt(v,10);
+  else if(k==='name') v=String(v).trim()||'小寶貝';
+  else if(k==='startDate'){
+    var today=dkey(new Date());
+    if(!v||v>today) v=today;
+    ui.weekOff=0;
+  }
+  S.settings[k]=v;save();render();
+});
+document.addEventListener('keydown',function(e){
+  if(e.key==='Escape'){var s=$modal.querySelector('.scrim[data-act="scrim"]');if(s) closeModal();}
+});
+document.addEventListener('visibilitychange',function(){if(!document.hidden) render();});
+
+/* ================= 啟動 ================= */
+(async function init(){
+  var raw=null;
+  try{
+    if(window.storage){
+      var r=await window.storage.get(KEY,false);
+      if(r&&r.value) raw=r.value;
+    }
+  }catch(e){}
+  if(!raw){try{raw=localStorage.getItem(KEY);}catch(e){}}
+  if(raw){try{S=normalize(JSON.parse(raw));}catch(e){}}
+  loaded=true;
+  render();
+  // 第一次使用：先存下預設值（含開始日期）
+  if(!raw) save();
+})();
+
+})();
+</script>
+</body>
+</html>
